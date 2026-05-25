@@ -3,6 +3,10 @@ fastapi>=0.110.0
 uvicorn>=0.29.0
 python-multipart>=0.0.9
 slowapi>=0.1.9
+httpx>=0.27.0
+
+# ── Machine Learning & Deep Learning Base ─────────────────────────
+torch--index-url https://download.pytorch.org/whl/cpu
 
 # ── LangChain ─────────────────────────────────────────────────────
 langchain>=0.3.0
@@ -23,7 +27,6 @@ sentence-transformers>=2.7.0
 # ── Knowledge Graph ───────────────────────────────────────────────
 networkx>=3.2.0
 spacy>=3.7.0
-# Após instalar, rode: python -m spacy download pt_core_news_sm
 
 # ── Supabase ──────────────────────────────────────────────────────
 supabase>=2.4.0

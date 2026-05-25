@@ -1,0 +1,38 @@
+# Segredos — nunca entram no container via build
+.env
+.env.*
+
+# Dados dos usuários — montados como volume
+user_data/
+
+# Ambiente virtual local
+.venv/
+venv/
+env/
+
+# Cache Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Índices RAG gerados localmente
+*.pkl
+*.faiss
+
+# Git
+.git/
+.gitignore
+
+# Avaliação (não precisa no container de produção)
+eval_rag.py
+eval_results.json
+eval_report.html
+
+# IDEs
+.vscode/
+.idea/
+
+# Sistema
+.DS_Store
+Thumbs.db

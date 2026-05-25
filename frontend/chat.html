@@ -147,15 +147,21 @@
     @keyframes msgIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
     .msg-row.user { justify-content: flex-end; }
     .msg-row.ai   { justify-content: flex-start; }
+    
     .bubble {
       max-width: 68%; padding: 12px 16px; border-radius: 16px;
-      font-size: 14px; line-height: 1.65; white-space: pre-wrap;
+      font-size: 14px; line-height: 1.65;
     }
     .msg-row.user .bubble {
       background: var(--user-bubble); border: 1px solid rgba(79,142,247,0.2); border-bottom-right-radius: 4px;
     }
     .msg-row.ai .bubble {
       background: var(--ai-bubble); border: 1px solid var(--border); border-bottom-left-radius: 4px;
+    }
+
+    .bubble-text {
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
     /* Cursor piscando durante streaming */
@@ -173,7 +179,7 @@
     .source-item {
       margin-top: 6px; padding: 8px 10px;
       background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-      border-radius: 8px; color: var(--muted); font-size: 11px; line-height: 1.5;
+      border-radius: 8px; color: var(--muted); font-size: 11px; line-height: 1.5; white-space: pre-wrap;
     }
     .source-filename { color: var(--accent); font-weight: 500; margin-bottom: 3px; }
     .graph-ctx { margin-top: 6px; font-size: 11px; }
@@ -336,7 +342,7 @@
         <div class="suggestion" onclick="useSuggestion(this)">Resuma os documentos carregados</div>
         <div class="suggestion" onclick="useSuggestion(this)">Quais são os tópicos principais?</div>
         <div class="suggestion" onclick="useSuggestion(this)">Liste as entidades mais importantes</div>
-        <div class="suggestion" onclick="useSuggestion(this)">Explique as relações entre os temas</div>
+        <div class="suggestion" onclick="useSuggestion(this)">Explique as relações entre os themes</div>
       </div>
     </div>
   </div>
@@ -481,13 +487,29 @@ function renderEmpty() {
     </div>`;
 }
 
-function appendMessage(role, content, sources = [], graphCtx = "") {
+function appendMessage(role, content, sources = [], graphCtx = "", techniques = null) {
   document.getElementById("emptyState")?.remove();
   const container = document.getElementById("messages");
   const row = document.createElement("div");
   row.className = `msg-row ${role === "user" ? "user" : "ai"}`;
 
   let extras = "";
+  
+  // Renderiza pills informativas sobre quais técnicas de prompt avançado foram ativadas
+  if (role === "assistant" && techniques) {
+    let techLabels = [];
+    if (techniques.hyde) techLabels.push("⚡ HyDE");
+    if (techniques.multi_query) techLabels.push("🔍 Multi-Query");
+    if (techniques.reranking) techLabels.push("🎯 Reranking");
+    if (techniques.graph) techLabels.push("🕸️ Graph Context");
+    
+    if (techLabels.length > 0) {
+      extras += `<div class="tech-container" style="margin-bottom: 8px; display: flex; gap: 4px; flex-wrap: wrap;">
+                  ${techLabels.map(t => `<span style="font-size: 10px; background: rgba(79,142,247,0.15); color: #4f8ef7; padding: 2px 6px; border-radius: 4px; font-weight: 500;">${t}</span>`).join("")}
+                 </div>`;
+    }
+  }
+
   if (sources?.length) {
     const items = sources.map(s =>
       `<div class="source-item"><div class="source-filename">📄 ${s.filename}</div>${escapeHtml(s.preview)}...</div>`
@@ -498,30 +520,47 @@ function appendMessage(role, content, sources = [], graphCtx = "") {
     extras += `<details class="graph-ctx"><summary>🕸️ Knowledge Graph</summary><div class="graph-content">${escapeHtml(graphCtx)}</div></details>`;
   }
 
-  row.innerHTML = `<div class="bubble">${escapeHtml(content)}${extras ? `<div style="margin-top:8px">${extras}</div>` : ""}</div>`;
+  // Divs estruturadas evitam o efeito de emenda de blocos de texto
+  row.innerHTML = `<div class="bubble">
+                    <div class="bubble-text">${escapeHtml(content)}</div>
+                    ${extras ? `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.05); padding-top:8px;">${extras}</div>` : ""}
+                  </div>`;
   container.appendChild(row);
   scrollBottom();
   return row;
 }
 
-// Cria bolha vazia que vai receber tokens do streaming
 function createStreamingBubble() {
   document.getElementById("emptyState")?.remove();
   const container = document.getElementById("messages");
   const row = document.createElement("div");
   row.className = "msg-row ai";
   row.id = "streamingRow";
-  row.innerHTML = `<div class="bubble streaming-cursor" id="streamingBubble"></div>`;
+  row.innerHTML = `<div class="bubble"><div class="bubble-text streaming-cursor" id="streamingBubble"></div></div>`;
   container.appendChild(row);
   scrollBottom();
   return document.getElementById("streamingBubble");
 }
 
-function finalizeStreamingBubble(bubble, sources, graphCtx) {
+function finalizeStreamingBubble(bubble, sources, graphCtx, techniques) {
   bubble.classList.remove("streaming-cursor");
   const content = bubble.textContent;
 
   let extras = "";
+  if (techniques) {
+    let techLabels = [];
+    if (techniques.hyde) techLabels.push("⚡ HyDE");
+    if (techniques.multi_query) techLabels.push("🔍 Multi-Query");
+    if (techniques.reranking) techLabels.push("🎯 Reranking");
+    if (techniques.graph) techLabels.push("🕸️ Graph Context");
+    
+    if (techLabels.length > 0) {
+      extras += `<div class="tech-container" style="margin-bottom: 8px; display: flex; gap: 4px; flex-wrap: wrap;">
+                  ${techLabels.map(t => `<span style="font-size: 10px; background: rgba(79,142,247,0.15); color: #4f8ef7; padding: 2px 6px; border-radius: 4px; font-weight: 500;">${t}</span>`).join("")}
+                 </div>`;
+    }
+  }
+
   if (sources?.length) {
     const items = sources.map(s =>
       `<div class="source-item"><div class="source-filename">📄 ${s.filename}</div>${escapeHtml(s.preview)}...</div>`
@@ -531,9 +570,11 @@ function finalizeStreamingBubble(bubble, sources, graphCtx) {
   if (graphCtx) {
     extras += `<details class="graph-ctx"><summary>🕸️ Knowledge Graph</summary><div class="graph-content">${escapeHtml(graphCtx)}</div></details>`;
   }
-  if (extras) {
-    bubble.innerHTML = escapeHtml(content) + `<div style="margin-top:8px">${extras}</div>`;
-  }
+  
+  // Remonta preservando as quebras de linha e separando metadados estruturais
+  const bubbleContainer = bubble.parentElement;
+  bubbleContainer.innerHTML = `<div class="bubble-text">${escapeHtml(content)}</div>
+                               ${extras ? `<div style="margin-top:10px; border-top:1px solid rgba(255,255,255,0.05); padding-top:8px;">${extras}</div>` : ""}`;
 }
 
 function escapeHtml(t) {
@@ -595,7 +636,9 @@ async function sendNormal(text) {
   });
   removeTyping();
   if (data) {
-    appendMessage("assistant", data.answer, data.sources, data.graph_context);
+    appendMessage("assistant", data.answer, data.sources, data.graph_context, {
+      hyde: aiToggles.hyde, multi_query: aiToggles.multi, reranking: aiToggles.rerank, graph: aiToggles.graph
+    });
     if (data.session_renamed) {
       await loadSessions();
       document.getElementById("topbarTitle").textContent =
@@ -605,7 +648,7 @@ async function sendNormal(text) {
 }
 
 async function sendStreaming(text) {
-  let sources = [], graphCtx = "", metaReceived = false;
+  let sources = [], graphCtx = "", metaReceived = false, techniques = null;
   const bubble = createStreamingBubble();
 
   try {
@@ -631,7 +674,7 @@ async function sendStreaming(text) {
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
-      buffer = lines.pop(); // guarda linha incompleta
+      buffer = lines.pop();
 
       for (const line of lines) {
         if (!line.startsWith("data: ")) continue;
@@ -641,6 +684,7 @@ async function sendStreaming(text) {
           if (payload.type === "meta") {
             sources   = payload.sources || [];
             graphCtx  = payload.graph_context || "";
+            techniques = payload.active_techniques || null;
             metaReceived = true;
             if (payload.new_title) {
               await loadSessions();
@@ -650,7 +694,7 @@ async function sendStreaming(text) {
             bubble.textContent += payload.token;
             scrollBottom();
           } else if (payload.type === "done") {
-            finalizeStreamingBubble(bubble, sources, graphCtx);
+            finalizeStreamingBubble(bubble, sources, graphCtx, techniques);
           }
         } catch {}
       }
@@ -669,17 +713,6 @@ function showTyping() {
   container.appendChild(row); scrollBottom();
 }
 function removeTyping() { document.getElementById("typingRow")?.remove(); }
-
-function setInputLocked(locked) {
-  const input = document.getElementById("chatInput");
-  const btn   = document.getElementById("btnSend");
-  btn.disabled      = locked;
-  input.disabled    = locked;
-  input.placeholder = locked ? "Aguarde a resposta..." : "Digite sua mensagem...";
-  input.style.opacity = locked ? "0.5" : "1";
-  btn.style.opacity   = locked ? "0.3" : "1";
-  btn.style.cursor    = locked ? "not-allowed" : "pointer";
-}
 
 function handleKey(e) {
   if (e.key === "Enter" && !e.shiftKey) {

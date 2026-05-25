@@ -1,0 +1,40 @@
+# Credenciais e Configuracoes Locais
+.env
+.env.*
+*.env
+
+# Ambientes Virtuais
+venv/
+.venv/
+env/
+ENV/
+Scripts/
+Lib/
+pyvenv.cfg
+
+# Caches do Python e Compilacao
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+
+# Dados Locais e Indices do RAG
+*.pkl
+*.faiss
+user_data/
+
+# Configuracoes de IDEs e Editores
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# Ficheiros do Sistema Operacional
+.DS_Store
+Thumbs.db
+desktop.ini

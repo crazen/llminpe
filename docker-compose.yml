@@ -1,0 +1,10 @@
+services:
+  chatbot:
+    build: .
+    image: inpe-chatbot-local:1.0   # ── ADICIONE ESTA LINHA AQUI ──
+    container_name: nimchat
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+...
